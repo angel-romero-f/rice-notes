@@ -31,7 +31,7 @@ func CORSMiddleware(next http.Handler) http.Handler {
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
-		// Passes the request to the next handler to be ran in the middleware chain. 
+		// Passes the request to the next handler to be ran in the middleware chain.
 		next.ServeHTTP(w, r)
 	})
 }

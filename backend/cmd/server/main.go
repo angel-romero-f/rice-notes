@@ -1,7 +1,16 @@
 package main
 
-import "fmt"
+import (
+	"log"
+	"net/http"
+
+	"github.com/angel-romero-f/rice-notes/internal/routes"
+)
 
 func main() {
-	fmt.Println("Hello world!")
+	r := routes.NewRouter()
+	http.ListenAndServe(":3000", r)
+
+	log.Println("Server running on :3000")
+
 }
