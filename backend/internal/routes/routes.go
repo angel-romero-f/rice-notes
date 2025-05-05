@@ -9,6 +9,8 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
+// NewRouter sets up the routing and their handlers for incoming HTTP requests. Returns
+// the router which main uses to start listsening for requests. 
 func NewRouter() *chi.Mux {
 	r := chi.NewRouter()
 
