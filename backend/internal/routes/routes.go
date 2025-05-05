@@ -2,9 +2,9 @@
 package routes
 
 import (
-	"net/http"
-
+	"github.com/angel-romero-f/rice-notes/internal/handlers"
 	internal_middleware "github.com/angel-romero-f/rice-notes/internal/middleware"
+	"github.com/angel-romero-f/rice-notes/internal/services"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
@@ -16,10 +16,11 @@ func NewRouter() *chi.Mux {
 	r.Use(middleware.Logger)
 	r.Use(internal_middleware.CORSMiddleware)
 
-	// Routes
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Response"))
-	})
+	// Services and handlers to inject into respective methods
+	noteService := services.NewNoteService()
+	noteHandler := handlers.NewNoteHandler(noteService)
+	// Routes setting up the handlers for incoming requests
+	r.Get("/", noteHandler.CreateNote)
 
 	return r
 }
