@@ -1,19 +1,14 @@
 package services
 
-import "fmt"
-
-type NoteUploader interface {
-	UploadNote(text string) error
+type noteService struct {
 }
 
-type noteUploader struct {
+// Factory method that returns a new NoteService instnace.
+func NewNoteService() *noteService {
+	return &noteService{}
 }
 
-func NewNoteService() NoteUploader {
-	return &noteUploader{}
-}
-
-func (n *noteUploader) UploadNote(text string) error {
-	fmt.Println("recieved note! %s", text)
-	return nil
+// UploadNote reutrns the string to be logged to the user after making a request.
+func (s *noteService) UploadNote() string {
+	return "Welcome to rice notes!"
 }
