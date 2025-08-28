@@ -2,6 +2,8 @@
 package routes
 
 import (
+	"os"
+
 	"github.com/angel-romero-f/rice-notes/internal/handlers"
 	internal_middleware "github.com/angel-romero-f/rice-notes/internal/middleware"
 	"github.com/angel-romero-f/rice-notes/internal/services"
@@ -21,8 +23,27 @@ func NewRouter() *chi.Mux {
 	// Services and handlers to inject into respective methods
 	noteService := services.NewNoteService()
 	noteHandler := handlers.NewNoteHandler(noteService)
+
+	// Auth setup with environment variables
+	googleClientID := os.Getenv("GOOGLE_CLIENT_ID")
+	googleClientSecret := os.Getenv("GOOGLE_CLIENT_SECRET")
+	redirectURL := os.Getenv("GOOGLE_REDIRECT_URL")
+	jwtSecret := os.Getenv("JWT_SECRET")
+
+	// Create auth service and handler
+	googleProvider := services.NewGoogleOAuth2Provider(googleClientID, googleClientSecret, redirectURL)
+	authService := services.NewAuthService(googleProvider, jwtSecret)
+	authHandler := handlers.NewAuthHandler(authService)
+
 	// Routes setting up the handlers for incoming requests
 	r.Get("/", noteHandler.CreateNote)
+
+	// Auth routes
+	r.Route("/api/auth", func(r chi.Router) {
+		r.Get("/google", authHandler.GoogleLogin)
+		r.Get("/google/callback", authHandler.GoogleCallback)
+		r.Get("/me", authHandler.Me)
+	})
 
 	return r
 }

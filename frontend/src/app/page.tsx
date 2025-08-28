@@ -1,7 +1,11 @@
+'use client'
+
 import React from 'react'
+import { redirect } from 'next/navigation'
 import NoteCard from '@/components/ui/NoteCard'
 import GoogleSignIn from '@/components/auth/GoogleSignIn'
-import { MockNotePreview } from '@/types'
+import { mockNotes } from '@/components/MockNotes'
+import { useAuth } from '@/hooks/useAuth'
 
 const styles = {
   container: 'h-screen flex overflow-hidden',
@@ -25,42 +29,25 @@ const styles = {
   riceHighlight: 'text-blue-600 font-semibold'
 }
 
-const mockNotes: MockNotePreview[] = [
-  {
-    id: '1',
-    title: 'Calculus I Notes',
-    course: 'MATH 101',
-    author: 'Sarah M.',
-    rating: 4.8,
-    thumbnailUrl: ''
-  },
-  {
-    id: '2',
-    title: 'Computational Thinking',
-    course: 'COMP 140',
-    author: 'Alex K.',
-    rating: 4.9,
-    thumbnailUrl: ''
-  },
-  {
-    id: '3',
-    title: 'Physics Study Guide',
-    course: 'PHYS 101',
-    author: 'Jordan L.',
-    rating: 4.7,
-    thumbnailUrl: ''
-  },
-  {
-    id: '4',
-    title: 'Chemistry Lab Reports',
-    course: 'CHEM 121',
-    author: 'Taylor R.',
-    rating: 4.6,
-    thumbnailUrl: ''
-  }
-]
 
 export default function HomePage() {
+  const { isAuthenticated, isLoading } = useAuth()
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+      </div>
+    )
+  }
+
+  // Redirect authenticated users using Next.js redirect
+  if (isAuthenticated) {
+    redirect('/dashboard')
+  }
+
+  // Show landing page for unauthenticated users
   return (
     <div className={styles.container}>
       {/* Left Section - Hero */}

@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(go test:*)",
+      "Bash(go fmt:*)",
+      "Bash(go vet:*)",
+      "Bash(go build:*)",
+      "Bash(timeout:*)",
+      "Bash(true)",
+      "Bash(timeout 5 go run ./cmd/server/main.go)",
+      "Bash(npm run dev:*)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_snapshot",
+      "Bash(go run:*)",
+      "mcp__playwright__browser_click",
+      "Bash(source:*)",
+      "Bash(pkill:*)",
+      "Bash(curl:*)",
+      "Bash(go get:*)",
+      "mcp__playwright__browser_close",
+      "Bash(./rice-notes)",
+      "Bash(lsof:*)",
+      "mcp__playwright__browser_type",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(grep:*)"
+    ],
+    "deny": []
+  }
+}
