@@ -15,15 +15,18 @@ export interface User {
 export interface Note {
   id: string
   title: string
-  description: string
-  course: Course
-  uploadedBy: User
-  uploadedAt: Date
-  fileType: 'pdf' | 'image' | 'markdown'
+  description?: string
+  course?: Course
+  course_id?: string // Backend format
+  uploadedBy?: User
+  uploadedAt?: Date
+  uploaded_at?: string // Backend format
+  fileType?: 'pdf' | 'image' | 'markdown'
+  file_name?: string // Backend format
   thumbnailUrl?: string
-  tags: string[]
-  rating: number
-  downloadCount: number
+  tags?: string[]
+  rating?: number
+  downloadCount?: number
 }
 
 export interface MockNotePreview {
