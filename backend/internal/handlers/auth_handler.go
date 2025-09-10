@@ -102,8 +102,6 @@ func (a *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case errMsg == "only Rice University emails are allowed":
 			a.sendErrorResponse(w, http.StatusForbidden, "non_rice_email", "Only Rice University email addresses are allowed")
-		case errMsg == "email not verified":
-			a.sendErrorResponse(w, http.StatusUnauthorized, "unverified_email", "Email address must be verified")
 		case errMsg == "invalid authorization code":
 			a.sendErrorResponse(w, http.StatusUnauthorized, "invalid_code", "Invalid authorization code")
 		default:
