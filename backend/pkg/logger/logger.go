@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"os"
 	"runtime"
 	"slices"
 	"strings"
@@ -363,4 +364,32 @@ func NewPrettyHandler(w io.Writer, opts *PrettyHandlerOptions) *PrettyHandler {
 	h.initPool()
 
 	return h
+}
+
+// Init initializes the default logger with pretty formatting
+func Init() error {
+	logLevel := slog.LevelInfo
+	
+	// Check environment variable for log level
+	switch os.Getenv("LOG_LEVEL") {
+	case "debug":
+		logLevel = slog.LevelDebug
+	case "warn":
+		logLevel = slog.LevelWarn
+	case "error":
+		logLevel = slog.LevelError
+	default:
+		logLevel = slog.LevelInfo
+	}
+
+	logOpts := &PrettyHandlerOptions{
+		Level:    logLevel,
+		Colorize: true,
+	}
+
+	handler := NewPrettyHandler(os.Stdout, logOpts)
+	logger := slog.New(handler)
+	slog.SetDefault(logger)
+
+	return nil
 }
