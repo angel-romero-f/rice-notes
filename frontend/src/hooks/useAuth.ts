@@ -49,7 +49,7 @@ export function useAuth() {
 
   const login = useCallback(() => {
     // Redirect to Google OAuth login endpoint
-    window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8081'}/api/auth/google`
+    window.location.href = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/api/auth/google`
   }, [])
 
   const logout = useCallback(async () => {
