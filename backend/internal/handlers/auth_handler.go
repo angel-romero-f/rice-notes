@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"os"
 
 	"github.com/angel-romero-f/rice-notes/internal/services"
 )
@@ -101,7 +102,13 @@ func (a *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 		errMsg := err.Error()
 		switch {
 		case errMsg == "only Rice University emails are allowed":
-			a.sendErrorResponse(w, http.StatusForbidden, "non_rice_email", "Only Rice University email addresses are allowed")
+			// Redirect to unauthorized page instead of sending JSON error
+			frontendURL := os.Getenv("FRONTEND_URL")
+			if frontendURL == "" {
+				frontendURL = "http://localhost:3000" // Fallback for development
+			}
+			unauthorizedURL := frontendURL + "/unauthorized"
+			http.Redirect(w, r, unauthorizedURL, http.StatusTemporaryRedirect)
 		case errMsg == "invalid authorization code":
 			a.sendErrorResponse(w, http.StatusUnauthorized, "invalid_code", "Invalid authorization code")
 		default:
@@ -110,30 +117,43 @@ func (a *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Set JWT in secure HttpOnly cookie
+	// Set JWT in secure HttpOnly cookie (for same-origin requests)
 	a.setJWTCookie(w, authResult.JWT)
 
 	slog.Info("Successful authentication", "email", authResult.Email, "name", authResult.Name)
 
-	// Redirect to frontend dashboard
-	frontendURL := "http://localhost:3000/dashboard" // TODO: Make configurable via environment
-	http.Redirect(w, r, frontendURL, http.StatusTemporaryRedirect)
+	// Redirect to frontend dashboard with JWT as query parameter (for cross-origin)
+	frontendURL := os.Getenv("FRONTEND_URL")
+	if frontendURL == "" {
+		frontendURL = "http://localhost:3000" // Fallback for development
+	}
+	dashboardURL := frontendURL + "/dashboard?token=" + authResult.JWT
+	http.Redirect(w, r, dashboardURL, http.StatusTemporaryRedirect)
 }
 
 // setJWTCookie sets a secure HttpOnly cookie with the JWT token
 func (a *AuthHandler) setJWTCookie(w http.ResponseWriter, jwt string) {
+	// Determine if we're in production (HTTPS) or development (HTTP)
+	isProduction := os.Getenv("ENV") == "production"
+	
 	cookie := &http.Cookie{
 		Name:     "jwt",
 		Value:    jwt,
 		Path:     "/",
 		HttpOnly: true,
-		Secure:   true, // Requires HTTPS in production
-		SameSite: http.SameSiteStrictMode,
+		Secure:   true, // Always require HTTPS for cross-origin cookies
+		SameSite: http.SameSiteNoneMode, // Required for cross-origin cookies
 		MaxAge:   24 * 60 * 60, // 24 hours (matching JWT expiration)
 	}
 
+	// For development, use SameSiteLax for same-origin requests
+	if !isProduction {
+		cookie.Secure = false
+		cookie.SameSite = http.SameSiteLaxMode
+	}
+
 	http.SetCookie(w, cookie)
-	slog.Debug("JWT cookie set", "cookie_name", cookie.Name, "max_age", cookie.MaxAge)
+	slog.Info("JWT cookie set", "cookie_name", cookie.Name, "max_age", cookie.MaxAge, "secure", cookie.Secure, "samesite", cookie.SameSite)
 }
 
 // sendErrorResponse sends a JSON error response with the specified status code
@@ -159,16 +179,26 @@ func (a *AuthHandler) sendErrorResponse(w http.ResponseWriter, statusCode int, e
 func (a *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 	slog.Info("User info requested", "remote_addr", r.RemoteAddr)
 
-	// Extract JWT from cookie
-	cookie, err := r.Cookie("jwt")
-	if err != nil {
-		slog.Warn("No JWT cookie found")
-		a.sendErrorResponse(w, http.StatusUnauthorized, "no_token", "Authentication required")
-		return
+	// Try to extract JWT from Authorization header first (for cross-origin)
+	var tokenString string
+	authHeader := r.Header.Get("Authorization")
+	if authHeader != "" && len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+		tokenString = authHeader[7:]
+		slog.Info("JWT found in Authorization header")
+	} else {
+		// Fallback to cookie (for same-origin)
+		cookie, err := r.Cookie("jwt")
+		if err != nil {
+			slog.Warn("No JWT found in Authorization header or cookie")
+			a.sendErrorResponse(w, http.StatusUnauthorized, "no_token", "Authentication required")
+			return
+		}
+		tokenString = cookie.Value
+		slog.Info("JWT found in cookie")
 	}
 
 	// Validate JWT
-	claims, err := a.authService.ValidateJWT(r.Context(), cookie.Value)
+	claims, err := a.authService.ValidateJWT(r.Context(), tokenString)
 	if err != nil {
 		slog.Warn("Invalid JWT token", "error", err)
 		a.sendErrorResponse(w, http.StatusUnauthorized, "invalid_token", "Invalid or expired token")

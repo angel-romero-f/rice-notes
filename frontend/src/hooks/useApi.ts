@@ -18,6 +18,11 @@ interface ApiError {
 }
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+const TOKEN_KEY = 'rice_notes_jwt'
+
+const getToken = (): string | null => {
+  return localStorage.getItem(TOKEN_KEY)
+}
 
 export function useApi<T = any>() {
   const [response, setResponse] = useState<ApiResponse<T>>({
@@ -38,7 +43,16 @@ export function useApi<T = any>() {
           'Content-Type': 'application/json',
           ...headers
         },
-        credentials: 'include' // Include cookies for authentication
+        credentials: 'include' // Include cookies for authentication (fallback)
+      }
+
+      // Add Authorization header if we have a token
+      const token = getToken()
+      if (token) {
+        config.headers = {
+          ...config.headers,
+          'Authorization': `Bearer ${token}`
+        }
       }
 
       if (body && method !== 'GET') {

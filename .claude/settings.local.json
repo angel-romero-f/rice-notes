@@ -23,7 +23,23 @@
       "mcp__playwright__browser_type",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(git reset:*)",
+      "Bash(git restore:*)",
+      "Bash(git check-ignore:*)",
+      "Bash(npm run build:*)",
+      "Bash(brew install:*)",
+      "Bash(brew services start:*)",
+      "Bash(/opt/homebrew/opt/postgresql@15/bin/createdb:*)",
+      "Bash(docker start:*)",
+      "mcp__playwright__browser_console_messages",
+      "Read(//Users/angelromero/.ssh/**)",
+      "Bash(ssh:*)",
+      "Bash(openssl rand:*)",
+      "mcp__playwright__browser_evaluate",
+      "mcp__playwright__browser_wait_for",
+      "Bash(kill:*)",
+      "Bash(scp:*)"
     ],
     "deny": []
   }

@@ -1,4 +1,9 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+const TOKEN_KEY = 'rice_notes_jwt'
+
+const getToken = (): string | null => {
+  return localStorage.getItem(TOKEN_KEY)
+}
 
 export interface Note {
   id: string
@@ -73,7 +78,14 @@ export async function uploadNote(
     }
 
     xhr.open('POST', `${API_BASE_URL}/api/notes`)
-    xhr.withCredentials = true // Include JWT cookie
+    xhr.withCredentials = true // Include JWT cookie (fallback)
+    
+    // Add Authorization header if we have a token
+    const token = getToken()
+    if (token) {
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`)
+    }
+    
     xhr.send(formData)
   })
 }
@@ -87,12 +99,20 @@ export async function fetchNotes(courseId?: string): Promise<Note[]> {
     url.searchParams.append('course_id', courseId)
   }
 
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json'
+  }
+
+  // Add Authorization header if we have a token
+  const token = getToken()
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
+  }
+
   const response = await fetch(url.toString(), {
     method: 'GET',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json'
-    }
+    credentials: 'include', // fallback for cookies
+    headers
   })
 
   if (!response.ok) {
@@ -110,12 +130,20 @@ export async function fetchNotes(courseId?: string): Promise<Note[]> {
  * Delete a note by ID
  */
 export async function deleteNote(noteId: string): Promise<void> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json'
+  }
+
+  // Add Authorization header if we have a token
+  const token = getToken()
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
+  }
+
   const response = await fetch(`${API_BASE_URL}/api/notes/${noteId}`, {
     method: 'DELETE',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json'
-    }
+    credentials: 'include', // fallback for cookies
+    headers
   })
 
   if (!response.ok) {
@@ -131,10 +159,19 @@ export async function deleteNote(noteId: string): Promise<void> {
  * Get note download URL
  */
 export async function getNoteDownloadUrl(noteId: string): Promise<string> {
+  const headers: Record<string, string> = {}
+
+  // Add Authorization header if we have a token
+  const token = getToken()
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
+  }
+
   const response = await fetch(`${API_BASE_URL}/api/notes/${noteId}`, {
     method: 'GET',
-    credentials: 'include',
-    redirect: 'manual' // Don't follow redirects automatically
+    credentials: 'include', // fallback for cookies
+    redirect: 'manual', // Don't follow redirects automatically
+    headers
   })
 
   if (response.status === 302) {

@@ -14,6 +14,21 @@ interface AuthState {
   error: string | null
 }
 
+// JWT token management
+const TOKEN_KEY = 'rice_notes_jwt'
+
+const setToken = (token: string) => {
+  localStorage.setItem(TOKEN_KEY, token)
+}
+
+const getToken = (): string | null => {
+  return localStorage.getItem(TOKEN_KEY)
+}
+
+const removeToken = () => {
+  localStorage.removeItem(TOKEN_KEY)
+}
+
 export function useAuth() {
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
@@ -28,6 +43,28 @@ export function useAuth() {
     try {
       setAuthState(prev => ({ ...prev, isLoading: true, error: null }))
       
+      // Check if we have a token from URL (OAuth callback)
+      const urlParams = new URLSearchParams(window.location.search)
+      const tokenFromUrl = urlParams.get('token')
+      
+      if (tokenFromUrl) {
+        // Store token and clean URL
+        setToken(tokenFromUrl)
+        window.history.replaceState({}, document.title, window.location.pathname)
+      }
+
+      // Check if we have a stored token
+      const token = getToken()
+      if (!token) {
+        setAuthState({
+          user: null,
+          isAuthenticated: false,
+          isLoading: false,
+          error: null
+        })
+        return
+      }
+      
       const userData = await apiGet('/api/auth/me')
       
       setAuthState({
@@ -37,7 +74,8 @@ export function useAuth() {
         error: null
       })
     } catch (error) {
-      // User is not authenticated or token is invalid
+      // Token is invalid, remove it
+      removeToken()
       setAuthState({
         user: null,
         isAuthenticated: false,
@@ -56,8 +94,9 @@ export function useAuth() {
     try {
       setAuthState(prev => ({ ...prev, isLoading: true }))
       
-      // Clear the JWT cookie by calling a logout endpoint (if implemented)
-      // For now, we'll just clear the client state and redirect
+      // Clear the stored token
+      removeToken()
+      
       setAuthState({
         user: null,
         isAuthenticated: false,
@@ -85,6 +124,7 @@ export function useAuth() {
     ...authState,
     login,
     logout,
-    checkAuthStatus
+    checkAuthStatus,
+    getToken // Export for use by API calls
   }
 }

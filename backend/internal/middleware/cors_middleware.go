@@ -1,19 +1,38 @@
 package middleware
 
-import "net/http"
+import (
+	"net/http"
+	"os"
+	"strings"
+)
 
-// allowedOrigin is the frontend origin we trust. !TODO: Replace with injecting environment variable
-const allowedOrigin = "http://localhost:3000"
+// getAllowedOrigins returns the list of allowed origins for CORS
+func getAllowedOrigins() []string {
+	origins := []string{"http://localhost:3000"} // Always allow local development
+	
+	// Add production origins from environment variable
+	if prodOrigins := os.Getenv("ALLOWED_ORIGINS"); prodOrigins != "" {
+		origins = append(origins, strings.Split(prodOrigins, ",")...)
+	}
+	
+	return origins
+}
 
 // CORSMiddleware serves as middleware to handle CORS in HTTP requests. Returns
 // an HTTP handler that adds the Access‑Control‑* headers needed for browsers to
 // allow the request.
 func CORSMiddleware(next http.Handler) http.Handler {
+	allowedOrigins := getAllowedOrigins()
+	
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
-		if origin == allowedOrigin {
-			// Only allows requests if the incoming origin is our specified origin.
-			w.Header().Set("Access-Control-Allow-Origin", origin)
+		
+		// Check if origin is in allowed list
+		for _, allowedOrigin := range allowedOrigins {
+			if origin == allowedOrigin {
+				w.Header().Set("Access-Control-Allow-Origin", origin)
+				break
+			}
 		}
 
 		// Which HTTP methods are permitted in cross‑origin requests.

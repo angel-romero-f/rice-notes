@@ -13,20 +13,30 @@ type UserContextKey string
 
 const userContextKey UserContextKey = "user"
 
-// JWTMiddleware validates JWT tokens from cookies and adds user context
+// JWTMiddleware validates JWT tokens from Authorization header or cookies and adds user context
 func JWTMiddleware(authService AuthServiceInterface) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Extract JWT from cookie
-			cookie, err := r.Cookie("jwt")
-			if err != nil {
-				slog.Debug("No JWT cookie found", "path", r.URL.Path)
-				http.Error(w, "Authentication required", http.StatusUnauthorized)
-				return
+			// Try to extract JWT from Authorization header first (for cross-origin)
+			var tokenString string
+			authHeader := r.Header.Get("Authorization")
+			if authHeader != "" && len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+				tokenString = authHeader[7:]
+				slog.Debug("JWT found in Authorization header", "path", r.URL.Path)
+			} else {
+				// Fallback to cookie (for same-origin)
+				cookie, err := r.Cookie("jwt")
+				if err != nil {
+					slog.Debug("No JWT found in Authorization header or cookie", "path", r.URL.Path)
+					http.Error(w, "Authentication required", http.StatusUnauthorized)
+					return
+				}
+				tokenString = cookie.Value
+				slog.Debug("JWT found in cookie", "path", r.URL.Path)
 			}
 
 			// Validate JWT
-			claims, err := authService.ValidateJWT(r.Context(), cookie.Value)
+			claims, err := authService.ValidateJWT(r.Context(), tokenString)
 			if err != nil {
 				slog.Warn("Invalid JWT token", "error", err, "path", r.URL.Path)
 				http.Error(w, "Invalid or expired token", http.StatusUnauthorized)
