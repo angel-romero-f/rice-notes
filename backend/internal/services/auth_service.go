@@ -171,18 +171,14 @@ func (a *AuthService) ExchangeCodeForToken(ctx context.Context, code string) (*A
 		return nil, fmt.Errorf("failed to get user info: %w", err)
 	}
 
-	// Validate Rice University email first
+	// Validate Rice University email - we only allow @rice.edu domains
 	if !a.isRiceEmail(userInfo.Email) {
 		slog.Warn("Non-Rice email attempted login", "email", userInfo.Email)
 		return nil, errors.New("only Rice University emails are allowed")
 	}
 
-	// For Rice emails, we trust Google's domain verification
-	// For non-Rice emails (if we ever allow them), require email verification
-	if !a.isRiceEmail(userInfo.Email) && !userInfo.Verified {
-		slog.Warn("User email not verified", "email", userInfo.Email)
-		return nil, errors.New("email not verified")
-	}
+	// For Rice emails, we trust Google's domain verification and don't require additional email verification
+	slog.Debug("Rice email authenticated", "email", userInfo.Email, "verified", userInfo.Verified)
 
 	// Generate JWT
 	jwtToken, err := a.generateJWT(userInfo)
