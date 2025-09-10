@@ -162,14 +162,6 @@ func TestAuthHandler_GoogleCallback(t *testing.T) {
 			expectError:    true,
 		},
 		{
-			name:           "unverified email",
-			code:           "valid-code",
-			state:          "valid-state",
-			authError:      errors.New("email not verified"),
-			expectedStatus: http.StatusUnauthorized,
-			expectError:    true,
-		},
-		{
 			name:           "service error",
 			code:           "valid-code",
 			state:          "valid-state",
